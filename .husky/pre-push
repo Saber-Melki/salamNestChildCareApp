@@ -1,0 +1,14 @@
+if git diff --cached --name-only | grep -q "^api-gateway/"; then
+  echo "📦 Pushing api-gateway changes to repo A..."
+  git subtree push --prefix=api-gateway git@github.com:Kinder-Garden-Project/api-gateway.git main
+fi
+
+if git diff --cached --name-only | grep -q "^user-service/"; then
+  echo "📦 Pushing user-service changes to repo B..."
+  git subtree push --prefix=user-service git@github.com:Kinder-Garden-Project/user-service.git main
+fi
+
+if git diff --cached --name-only | grep -q "^auth-service/"; then
+  echo "📦 Pushing auth-service changes to repo B..."
+  git subtree push --prefix=auth-service https://github.com/Kinder-Garden-Project/auth-service.git main
+fi

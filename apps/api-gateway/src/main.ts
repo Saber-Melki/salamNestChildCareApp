@@ -1,0 +1,50 @@
+import { NestFactory } from '@nestjs/core';
+import { ApiGatewayModule } from './api-gateway.module';
+import * as cookieParser from 'cookie-parser';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import chalk from 'chalk';
+import boxen from 'boxen';
+
+async function bootstrap() {
+  const app = await NestFactory.create(ApiGatewayModule);
+
+  // Middleware
+  app.use(cookieParser());
+
+  app.enableCors({
+    origin: 'http://localhost:5173', // frontend URL
+    credentials: true,
+  });
+
+  // Swagger configuration
+  const config = new DocumentBuilder()
+    .setTitle('API Gateway')
+    .setDescription('API documentation for SalamNest childcare app microservices')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document);
+
+  const port = 8080;
+  await app.listen(port);
+
+  const message = `
+${chalk.blue.bold('🚀 SalamNest API Gateway')}
+${chalk.greenBright('✅ Running on:')} ${chalk.yellow(`http://localhost:${port}`)}
+${chalk.greenBright('📖 Swagger docs:')} ${chalk.cyan(`http://localhost:${port}/api/docs`)}
+
+${chalk.magentaBright('✨ Enjoy while building an amazing childcare app! ✨')}
+`;
+
+  console.log(
+    boxen(message, {
+      padding: 1,
+      margin: 1,
+      borderColor: 'cyan',
+      borderStyle: 'round',
+    }),
+  );
+}
+bootstrap();
