@@ -1,39 +1,44 @@
-import { ApiProperty, PartialType } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsOptional } from 'class-validator';
+import {
+  Controller,
+  Post,
+  Get,
+  Delete,
+  Put,
+  Param,
+  Body,
+  Inject,
+} from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
+import { CreateStaffDto } from 'apps/staff-service/src/dto/create-staff.dto';
+import { UpdateStaffDto } from 'apps/staff-service/src/dto/update-staff.dto';
 
-export class CreateStaffDto {
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  staff: string;
 
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  day: string;
+@Controller('staff')
+export class StaffGatewayController {
+  constructor(@Inject('STAFF_SERVICE') private readonly staffClient: ClientProxy) {}
 
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  start: string;
+  @Post()
+  async create(@Body() dto: CreateStaffDto) {
+    return this.staffClient.send('create_staff', dto);
+  }
 
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  end: string;
+  @Get()
+  async findAll() {
+    return this.staffClient.send('find_all_staff', {});
+  }
 
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  role: string;
+  @Get(':id')
+  async findOne(@Param('id') id: string) {
+    return this.staffClient.send('find_one_staff', id);
+  }
 
-  @ApiProperty({ required: false })
-  @IsOptional()
-  @IsString()
-  notes?: string;
+  @Put(':id')
+  async update(@Param('id') id: string, @Body() dto: UpdateStaffDto) {
+    return this.staffClient.send('update_staff', { id, updateData: dto });
+  }
+
+  @Delete(':id')
+  async remove(@Param('id') id: string) {
+    return this.staffClient.send('remove_staff', id);
+  }
 }
-
-export class UpdateShiftDto extends CreateStaffDto {}
-
-// ✅ Nouveau DTO pour mettre à jour un Staff (tous les champs deviennent optionnels)
-export class UpdateStaffDto extends PartialType(CreateStaffDto) {}

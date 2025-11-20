@@ -2,49 +2,63 @@ import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AttendanceService } from '../service/attendance.service';
 import { UpdateAttendanceDto } from '../dto/update-attendance.dto';
+import { CreateAttendanceDto } from '../dto/create-attendance.dto';
 
 @Controller()
 export class AttendanceController {
   constructor(private readonly attendanceService: AttendanceService) {}
 
-  // Get all attendances
+  // ── existing patterns (keep as-is) ─────────────────────────────────────
+  @MessagePattern('create_attendance')
+  create(@Payload() dto: CreateAttendanceDto) {
+    return this.attendanceService.create(dto);
+  }
+
   @MessagePattern('find_all_attendance')
-  async findAll() {
+  findAll() {
     return this.attendanceService.findAll();
   }
 
-  // Get one attendance by ID
   @MessagePattern('find_one_attendance')
-  async findOne(@Payload() id: string) {
+  findOne(@Payload() id: string) {
     return this.attendanceService.findOne(id);
   }
 
-  // Remove attendance
   @MessagePattern('remove_attendance')
-  async remove(@Payload() id: string) {
+  remove(@Payload() id: string) {
     return this.attendanceService.remove(id);
   }
 
-  // Update attendance (for check-in / check-out)
   @MessagePattern('update_attendance')
-  async update(
+  update(
     @Payload() data: { id: string; updateAttendanceDto: UpdateAttendanceDto },
   ) {
-    return this.attendanceService.update(
-      data.id,
-      data.updateAttendanceDto,
-    );
+    return this.attendanceService.update(data.id, data.updateAttendanceDto);
   }
 
-  // Specific pattern for CHECK-IN
   @MessagePattern('check_in')
-  async checkIn(@Payload() employeeId: string) {
-    return this.attendanceService.checkIn(employeeId);
+  childCheckIn(@Payload() childId: string) {
+    return this.attendanceService.checkIn(childId);
   }
 
-  // Specific pattern for CHECK-OUT
   @MessagePattern('check_out')
-  async checkOut(@Payload() employeeId: string) {
-    return this.attendanceService.checkOut(employeeId);
+  childCheckOut(@Payload() childId: string) {
+    return this.attendanceService.checkOut(childId);
+  }
+
+  // ── NEW: staff patterns required by your gateway ───────────────────────
+  @MessagePattern('staff_check_in')
+  staffCheckIn(@Payload() staffId: string) {
+    return this.attendanceService.staffCheckIn(staffId);
+  }
+
+  @MessagePattern('staff_check_out')
+  staffCheckOut(@Payload() staffId: string) {
+    return this.attendanceService.staffCheckOut(staffId);
+  }
+
+  @MessagePattern('staff_today')
+  staffToday(@Payload() staffId: string) {
+    return this.attendanceService.staffToday(staffId);
   }
 }

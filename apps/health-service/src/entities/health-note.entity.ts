@@ -6,18 +6,17 @@ export class HealthNote {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
-  noteType: string;
+  @Column() noteType: string;
+  @Column() description: string;
+  @Column() date: string;
+  @Column({ nullable: true }) followUp: string;
 
-  @Column()
-  description: string;
+  @Column({ type: 'varchar', default: 'medium' })
+  priority: 'low' | 'medium' | 'high';
 
-  @Column()
-  date: string;
+  @Column({ type: 'varchar', default: 'active' })
+  status: 'active' | 'resolved' | 'pending';
 
-  @Column({ nullable: true })
-  followUp: string;
-
-  @ManyToOne(() => Health, (health) => health.notes)
+  @ManyToOne(() => Health, (health) => health.notes, { onDelete: 'CASCADE' })
   health: Health;
 }

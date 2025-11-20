@@ -1,12 +1,18 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { CreateHealthDto, UpdateHealthDto, CreateHealthNoteDto, UpdateHealthNoteDto } from '../dto/health.dto';
 import { HealthService } from '../service/health.service';
+import {
+  CreateHealthDto,
+  UpdateHealthDto,
+  CreateHealthNoteDto,
+  UpdateHealthNoteDto,
+} from '../dto/health.dto';
 
 @Controller()
 export class HealthController {
   constructor(private readonly healthService: HealthService) {}
 
+  // Health
   @MessagePattern('find_all_health')
   findAll() {
     return this.healthService.findAll();
@@ -29,22 +35,28 @@ export class HealthController {
 
   @MessagePattern('remove_health')
   remove(@Payload() id: string) {
-    return this.healthService.remove(id);
+    return this.healthService.remove(id); // returns { success: true }
   }
 
   // Notes
   @MessagePattern('create_health_note')
-  createNote(@Payload() data: CreateHealthNoteDto) {
-    return this.healthService.createNote(data);
+  createNote(@Payload() data: { healthId: string; note: CreateHealthNoteDto }) {
+    return this.healthService.createNote(data.healthId, data.note);
   }
 
   @MessagePattern('update_health_note')
-  updateNote(@Payload() data: { id: string; dto: UpdateHealthNoteDto }) {
-    return this.healthService.updateNote(data.id, data.dto);
+  updateNote(@Payload() data: { healthId: string; noteId: string; note: UpdateHealthNoteDto }) {
+    return this.healthService.updateNote(data.healthId, data.noteId, data.note);
   }
 
-  @MessagePattern('remove_health_note')
-  removeNote(@Payload() id: string) {
-    return this.healthService.removeNote(id);
+  @MessagePattern('delete_health_note')
+  removeNote(@Payload() data: { healthId: string; noteId: string }) {
+    return this.healthService.removeNote(data.healthId, data.noteId); // returns { success: true }
+  }
+
+  // Seed: create records + initial note for every child
+  @MessagePattern('seed_health_for_all_children')
+  seedHealthForAll() {
+    return this.healthService.seedForAllChildren();
   }
 }

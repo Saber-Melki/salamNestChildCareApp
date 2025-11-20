@@ -1,19 +1,30 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
-@Entity()
-export class Attendance {
+export type AttendanceStatus = 'present' | 'away';
+
+@Entity({ name: 'attendances' })
+export class AttendanceEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column()
-  childId: string; // juste lier par id, sans relation Child
+  childId: string;
 
-  @Column()
-  date: string; // yyyy-mm-dd
+  @Column({ type: 'date' })
+  date: string; // YYYY-MM-DD
 
-  @Column({ nullable: true })
-  checkIn?: string; // heure d’arrivée
+  @Column({ type: 'varchar', length: 10 })
+  status: AttendanceStatus;
 
-  @Column({ nullable: true })
-  checkOut?: string; // heure de départ
+  @Column({ type: 'time', nullable: true })
+  checkIn?: string;
+
+  @Column({ type: 'time', nullable: true })
+  checkOut?: string;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 }

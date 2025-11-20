@@ -1,12 +1,15 @@
+// apps/api-gateway/src/api-gateway.module.ts
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
+
 import { AuthController } from './auth/auth.controller';
 import { JwtStrategy } from './auth/strategies/jwt.strategy';
 import { JwtRefreshStrategy } from './auth/strategies/jwt-refresh.strategy';
 import { UserController } from './auth/user.controller';
+
 import { ChildGatewayController } from './child-gateway.controller';
 import { AttendanceGatewayController } from './attendance-gateway.controller';
 import { BillingGatewayController } from './billing-gateway.module';
@@ -15,6 +18,11 @@ import { MediaGatewayController } from './media-gateway.controller';
 import { CalendarGatewayController } from './calendar-gateway.controller';
 import { BookingGatewayController } from './booking.gateway.controller';
 import { HealthGatewayController } from './health-gateway.controller';
+import { StaffGatewayController } from './staff-gateway.controller';
+import { UserGatewayController } from './user-gateway.controller';
+
+// 👇 NEW: import the communication gateway controller
+import { CommunicationGatewayController } from './communication/communication-gateway.controller';
 
 @Module({
   imports: [
@@ -56,7 +64,7 @@ import { HealthGatewayController } from './health-gateway.controller';
           transport: Transport.RMQ,
           options: {
             urls: [configService.get<string>('RABBITMQ_URL')],
-            queue: 'child_queue', // ⚠️ utilise une vraie queue pour les enfants
+            queue: 'child_queue',
             queueOptions: { durable: false },
           },
         }),
@@ -70,7 +78,7 @@ import { HealthGatewayController } from './health-gateway.controller';
           options: {
             urls: [configService.get<string>('RABBITMQ_URL')],
             queue: 'health_queue',
-            queueOptions: { durable: false }, 
+            queueOptions: { durable: false },
           },
         }),
       },
@@ -82,7 +90,7 @@ import { HealthGatewayController } from './health-gateway.controller';
           transport: Transport.RMQ,
           options: {
             urls: [configService.get<string>('RABBITMQ_URL')],
-            queue: 'attendance_queue', // doit matcher avec ton attendance-service
+            queue: 'attendance_queue',
             queueOptions: { durable: false },
           },
         }),
@@ -108,7 +116,7 @@ import { HealthGatewayController } from './health-gateway.controller';
           transport: Transport.RMQ,
           options: {
             urls: [configService.get<string>('RABBITMQ_URL')],
-            queue: 'shift_queue', // doit matcher avec ton shift-service
+            queue: 'shift_queue',
             queueOptions: { durable: false },
           },
         }),
@@ -134,12 +142,13 @@ import { HealthGatewayController } from './health-gateway.controller';
           transport: Transport.RMQ,
           options: {
             urls: [configService.get<string>('RABBITMQ_URL')],
-            queue: 'calendar_queue', // doit matcher avec ton calendar-service
+            queue: 'calendar_queue',
             queueOptions: { durable: true },
           },
         }),
       },
-      { name: 'BOOKING_SERVICE',
+      {
+        name: 'BOOKING_SERVICE',
         imports: [ConfigModule],
         inject: [ConfigService],
         useFactory: (configService: ConfigService) => ({
@@ -150,14 +159,42 @@ import { HealthGatewayController } from './health-gateway.controller';
             queueOptions: { durable: false },
           },
         }),
-       }, // Exemple de service sans microservice pour l'instant
+      },
+      {
+        name: 'STAFF_SERVICE',
+        imports: [ConfigModule],
+        inject: [ConfigService],
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.RMQ,
+          options: {
+            urls: [configService.get<string>('RABBITMQ_URL')],
+            queue: 'staff_queue',
+            queueOptions: { durable: false },
+          },
+        }),
+      },
+      // 👇 NEW: COMMUNICATION_SERVICE client
+{
+  name: 'COMMUNICATION_SERVICE',
+  imports: [ConfigModule],
+  inject: [ConfigService],
+  useFactory: (configService: ConfigService) => ({
+    transport: Transport.RMQ,
+    options: {
+      urls: [configService.get<string>('RABBITMQ_URL')],
+      queue: 'communication_queue',     // 👈 MUST match microservice main.ts
+      queueOptions: { durable: false },
+    },
+  }),
+},
+
     ]),
   ],
   controllers: [
-    // Ajouter d'autres contrôleurs de passerelle ici
     AuthController,
     UserController,
-    ChildGatewayController, 
+    UserGatewayController,
+    ChildGatewayController,
     HealthGatewayController,
     AttendanceGatewayController,
     BillingGatewayController,
@@ -165,6 +202,9 @@ import { HealthGatewayController } from './health-gateway.controller';
     MediaGatewayController,
     CalendarGatewayController,
     BookingGatewayController,
+    StaffGatewayController,
+    // 👇 NEW controller so Swagger exposes /messages endpoints
+    CommunicationGatewayController,
   ],
   providers: [JwtStrategy, JwtRefreshStrategy],
 })

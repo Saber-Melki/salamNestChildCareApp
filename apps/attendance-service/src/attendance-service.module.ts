@@ -3,8 +3,10 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DatabaseModule } from '../../libs/database/src/database.module'; 
 import { AttendanceController } from './controller/attendance.controller'; // RabbitMQ
-import { Attendance } from './entities/attendance.entity';
+import { AttendanceEntity } from './entities/attendance.entity';
 import { AttendanceService } from './service/attendance.service';
+import { StaffAttendanceEntity } from './entities/staff-attendance.entity';
+import { RestAttendanceController } from './controller/rest-attendance.controller';
 
 @Module({
   imports: [
@@ -13,10 +15,11 @@ import { AttendanceService } from './service/attendance.service';
       envFilePath: './.env',
     }),
     DatabaseModule.register(), 
-    TypeOrmModule.forFeature([Attendance]),
+    TypeOrmModule.forFeature([AttendanceEntity,StaffAttendanceEntity]),
   ],
   controllers: [
-    AttendanceController,    
+    AttendanceController,  
+    RestAttendanceController  
   ],
   providers: [AttendanceService],
 })

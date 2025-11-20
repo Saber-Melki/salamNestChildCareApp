@@ -1,33 +1,35 @@
 import { NestFactory } from '@nestjs/core';
+import { StaffServiceModule } from './staff-service.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { StaffServiceModule } from './staff-service.module';
 
 async function bootstrap() {
+  // Démarre le vrai module du microservice staff
   const app = await NestFactory.create(StaffServiceModule);
 
   const configService = app.get(ConfigService);
 
-  // 🎯 Connexion au microservice RMQ
+  // Configurer le microservice RMQ
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.RMQ,
     options: {
-      urls: [configService.get<string>('RABBITMQ_URL') || 'amqp://localhost:5672'],
-      queue: 'staff_queue',
+      urls: [
+        configService.get<string>('RABBITMQ_URL') || 'amqp://localhost:5672',
+      ],
+      queue: 'staff_queue', // 👈 doit matcher avec api-gateway
       queueOptions: {
         durable: false,
       },
     },
   });
 
-  // 🎯 Swagger config
+  // Swagger (optionnel si REST aussi)
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Staff Service')
-    .setDescription('API for managing staff shifts')
+    .setDescription('API for managing staff')
     .setVersion('1.0')
     .build();
-
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api', app, document);
 

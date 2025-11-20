@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+import { IsEmail, IsIn, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class LoginDto {
   @ApiProperty()
@@ -11,6 +11,11 @@ export class LoginDto {
   @IsString()
   @IsNotEmpty()
   readonly password: string;
+
+    // the role selected in the UI
+  @IsOptional()
+  @IsIn(['admin', 'staff', 'parent'])
+  role?: 'admin' | 'staff' | 'parent';
 }
 
 export class PostLoginResponse {

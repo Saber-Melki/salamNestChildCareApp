@@ -2,8 +2,6 @@ import { NestFactory } from '@nestjs/core';
 import { ApiGatewayModule } from './api-gateway.module';
 import * as cookieParser from 'cookie-parser';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import chalk from 'chalk';
-import boxen from 'boxen';
 
 async function bootstrap() {
   const app = await NestFactory.create(ApiGatewayModule);
@@ -30,7 +28,14 @@ async function bootstrap() {
   const port = 8080;
   await app.listen(port);
 
-  const message = `
+  // ---- Pretty console output (ESM-safe) ----
+  try {
+    const [{ default: chalk }, { default: boxen }] = await Promise.all([
+      import('chalk'), // ESM
+      import('boxen'), // ESM
+    ]);
+
+    const message = `
 ${chalk.blue.bold('🚀 SalamNest API Gateway')}
 ${chalk.greenBright('✅ Running on:')} ${chalk.yellow(`http://localhost:${port}`)}
 ${chalk.greenBright('📖 Swagger docs:')} ${chalk.cyan(`http://localhost:${port}/api/docs`)}
@@ -38,13 +43,27 @@ ${chalk.greenBright('📖 Swagger docs:')} ${chalk.cyan(`http://localhost:${port
 ${chalk.magentaBright('✨ Enjoy while building an amazing childcare app! ✨')}
 `;
 
-  console.log(
-    boxen(message, {
-      padding: 1,
-      margin: 1,
-      borderColor: 'cyan',
-      borderStyle: 'round',
-    }),
-  );
+    // eslint-disable-next-line no-console
+    console.log(
+      boxen(message, {
+        padding: 1,
+        margin: 1,
+        borderColor: 'cyan',
+        borderStyle: 'round',
+      }),
+    );
+  } catch (e) {
+    // Fallback if chalk/boxen aren’t available or fail to import
+    // eslint-disable-next-line no-console
+    console.log(
+      [
+        '🚀 SalamNest API Gateway',
+        `✅ Running on: http://localhost:${port}`,
+        `📖 Swagger docs: http://localhost:${port}/api/docs`,
+        '✨ Enjoy while building an amazing childcare app! ✨',
+      ].join('\n'),
+    );
+  }
 }
+
 bootstrap();
