@@ -114,27 +114,55 @@ export class UserService {
 
   async updateUser(id: string, updateData: UpdateUserDto) {
     const userId = parseInt(id, 10);
+
+    if (!Number.isInteger(userId) || userId <= 0) {
+      throw new BadRequestException(`Invalid user id: ${id}`);
+    }
+
     const user = await this.userRepository.findOne({
       where: { user_id: userId },
     });
     if (!user) throw new NotFoundException(`User with ID ${id} not found`);
 
-    // Prevent raw password updates here
-    if ('password' in updateData) delete (updateData as any).password;
-
-    // Normalize email if provided
-    if ((updateData as any).email) {
-      (updateData as any).email = this.normalizeEmail(
-        (updateData as any).email,
-      );
+    // 🔹 Never allow password to be updated here (use dedicated flow)
+    if ('password' in updateData) {
+      delete (updateData as any).password;
     }
 
-    await this.userRepository.update({ user_id: userId }, updateData as any);
-    return this.getUserById(id);
+    // 🔹 Remove any id / user_id / meta fields that might come from frontend
+    const {
+      id: _ignoreId,
+      user_id: _ignoreUserId,
+      created_at: _ignoreCreated,
+      updated_at: _ignoreUpdated,
+      current_hashed_refresh_token: _ignoreRefresh,
+      password_hash: _ignorePasswordHash,
+      ...safeUpdate
+    } = updateData as any;
+
+    // 🔹 Normalize email if provided
+    if (safeUpdate.email) {
+      safeUpdate.email = this.normalizeEmail(safeUpdate.email);
+    }
+
+    // OPTIONAL: if no fields to update, just return current user
+    if (Object.keys(safeUpdate).length === 0) {
+      return this.getUserById(userId);
+    }
+
+    await this.userRepository.update({ user_id: userId }, safeUpdate);
+
+    // Return the updated projection
+    return this.getUserById(userId);
   }
 
   async removeUser(id: string) {
     const userId = parseInt(id, 10);
+
+    if (!Number.isInteger(userId) || userId <= 0) {
+      throw new BadRequestException(`Invalid user id: ${id}`);
+    }
+
     const user = await this.userRepository.findOne({
       where: { user_id: userId },
     });
@@ -171,9 +199,12 @@ export class UserService {
     userId: string,
   ): Promise<boolean> {
     try {
+      const id = parseInt(userId, 10);
+      if (!Number.isInteger(id) || id <= 0) return false;
+
       const hashed = await bcrypt.hash(refreshToken, 10);
       await this.userRepository.update(
-        { user_id: parseInt(userId, 10) },
+        { user_id: id },
         { current_hashed_refresh_token: hashed },
       );
       return true;
@@ -184,8 +215,11 @@ export class UserService {
 
   async removeRefreshToken(userId: string): Promise<boolean> {
     try {
+      const id = parseInt(userId, 10);
+      if (!Number.isInteger(id) || id <= 0) return false;
+
       await this.userRepository.update(
-        { user_id: parseInt(userId, 10) },
+        { user_id: id },
         { current_hashed_refresh_token: null },
       );
       return true;
@@ -195,8 +229,11 @@ export class UserService {
   }
 
   async getUserIfRefreshTokenMatches(refreshToken: string, userId: string) {
+    const id = parseInt(userId, 10);
+    if (!Number.isInteger(id) || id <= 0) return null;
+
     const user = await this.userRepository.findOne({
-      where: { user_id: parseInt(userId, 10) },
+      where: { user_id: id },
       select: ['user_id', 'role', 'current_hashed_refresh_token'],
     });
     if (!user || !user.current_hashed_refresh_token) return null;

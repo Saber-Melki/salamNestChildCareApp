@@ -16,7 +16,4 @@ export class AlbumDto {
   @IsBoolean()
   @IsOptional()
   isPublic?: boolean;
-  itemCount: any;
-  id: string;
-
 }

@@ -9,9 +9,7 @@
     "build": "nest build",
     "format": "prettier --write \"apps/**/*.ts\" \"libs/**/*.ts\"",
     "start": "nest start",
-
-    "start:all": "concurrently \"npm run start:gateway\" \"npm run start:auth\" \"npm run start:user\" \"npm run start:child\" \"npm run start:health\" \"npm run start:attendance\" \"npm run start:billing\" \"npm run start:shift\" \"npm run start:media\" \"npm run start:calendar\" \"npm run start:booking\" \"npm run start:staff\" \"npm run start:communication\"", 
-
+    "start:all": "concurrently \"npm run start:gateway\" \"npm run start:auth\" \"npm run start:user\" \"npm run start:child\" \"npm run start:health\" \"npm run start:attendance\" \"npm run start:billing\" \"npm run start:shift\" \"npm run start:media\" \"npm run start:calendar\" \"npm run start:booking\" \"npm run start:staff\" \"npm run start:communication\"",
     "start:gateway": "nest start api-gateway --watch",
     "start:auth": "nest start auth-service --watch",
     "start:user": "nest start user-service --watch",
@@ -24,15 +22,10 @@
     "start:calendar": "nest start calendar-service --watch",
     "start:booking": "nest start booking-service --watch",
     "start:staff": "nest start staff-service --watch",
-
     "start:communication": "nest start communication-service --watch",
-
     "start:dev:windows": "start \"API Gateway\" cmd /c \"npm run start:gateway\" && start \"Auth Service\" cmd /c \"npm run start:auth\" && start \"User Service\" cmd /c \"npm run start:user\" && start \"Child Service\" cmd /c \"npm run start:child\" && start \"Health Service\" cmd /c \"npm run start:health\" && start \"Attendance Service\" cmd /c \"npm run start:attendance\" && start \"Billing Service\" cmd /c \"npm run start:billing\" && start \"Media Service\" cmd /c \"npm run start:media\" && start \"Calendar Service\" cmd /c \"npm run start:calendar\" && start \"Booking Service\" cmd /c \"npm run start:booking\" && start \"Staff Service\" cmd /c \"npm run start:staff\" && start \"Communication Service\" cmd /c \"npm run start:communication\"",
-
     "start:dev:macos": "osascript -e 'tell app \"Terminal\" to do script \"npm run start:gateway\"' && osascript -e 'tell app \"Terminal\" to do script \"npm run start:auth\"' && osascript -e 'tell app \"Terminal\" to do script \"npm run start:user\"' && osascript -e 'tell app \"Terminal\" to do script \"npm run start:child\"' && osascript -e 'tell app \"Terminal\" to do script \"npm run start:health\"' && osascript -e 'tell app \"Terminal\" to do script \"npm run start:attendance\"' && osascript -e 'tell app \"Terminal\" to do script \"npm run start:billing\"' && osascript -e 'tell app \"Terminal\" to do script \"npm run start:media\"' && osascript -e 'tell app \"Terminal\" to do script \"npm run start:calendar\"' && osascript -e 'tell app \"Terminal\" to do script \"npm run start:booking\"' && osascript -e 'tell app \"Terminal\" to do script \"npm run start:staff\"' && osascript -e 'tell app \"Terminal\" to do script \"npm run start:communication\"'",
-
     "start:dev:gnome": "gnome-terminal -- /bin/sh -c 'npm run start:gateway; exec bash' && gnome-terminal -- /bin/sh -c 'npm run start:auth; exec bash' && gnome-terminal -- /bin/sh -c 'npm run start:user; exec bash' && gnome-terminal -- /bin/sh -c 'npm run start:child; exec bash' && gnome-terminal -- /bin/sh -c 'npm run start:health; exec bash' && gnome-terminal -- /bin/sh -c 'npm run start:attendance; exec bash' && gnome-terminal -- /bin/sh -c 'npm run start:billing; exec bash' && gnome-terminal -- /bin/sh -c 'npm run start:media; exec bash' && gnome-terminal -- /bin/sh -c 'npm run start:calendar; exec bash' && gnome-terminal -- /bin/sh -c 'npm run start:booking; exec bash' && gnome-terminal -- /bin/sh -c 'npm run start:staff; exec bash' && gnome-terminal -- /bin/sh -c 'npm run start:communication; exec bash'",
-
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/apps/daycare-management-system/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
@@ -66,6 +59,7 @@
     "class-validator": "^0.14.2",
     "cookie-parser": "^1.4.7",
     "fs": "^0.0.1-security",
+    "googleapis": "^166.0.0",
     "multer": "^2.0.2",
     "nodemailer": "^7.0.10",
     "passport": "^0.7.0",

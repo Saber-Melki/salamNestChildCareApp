@@ -8,7 +8,8 @@ import { CreateMediaDto } from '../dto/create-media.dto';
 export class MediaController {
   constructor(private readonly mediaService: MediaService) {}
 
-  // --- Albums ---
+  // ---------- ALBUMS ----------
+
   @MessagePattern('create_album')
   createAlbum(@Payload() dto: AlbumDto) {
     if (!dto) throw new Error('Invalid Album data');
@@ -27,8 +28,13 @@ export class MediaController {
   }
 
   @MessagePattern('update_album')
-  updateAlbum(@Payload() payload: { id: string; update: Partial<AlbumDto> }) {
-    if (!payload?.id || !payload?.update) throw new Error('Invalid update payload');
+  updateAlbum(
+    @Payload()
+    payload: { id: string; update: Partial<AlbumDto> },
+  ) {
+    if (!payload?.id || !payload?.update) {
+      throw new Error('Invalid update payload');
+    }
     return this.mediaService.updateAlbum(payload.id, payload.update);
   }
 
@@ -38,26 +44,43 @@ export class MediaController {
     return this.mediaService.deleteAlbum(id);
   }
 
-  // --- Media Items ---
+  // ---------- MEDIA ----------
+
+  /**
+   * Payload comes from gateway:
+   * {
+   *   dtos: CreateMediaDto[];
+   *   files: Express.Multer.File[];
+   *   baseUrl: string;
+   * }
+   */
   @MessagePattern('create_media')
-  createMedia(@Payload() payload: { dto: CreateMediaDto; file: any }) {
-    if (!payload?.dto || !payload?.file) throw new Error('Invalid media payload');
+  createMedia(
+    @Payload()
+    payload: {
+      dtos: CreateMediaDto[];
+      files: Express.Multer.File[];
+      baseUrl: string;
+    },
+  ) {
+    if (!payload?.dtos || !payload?.files || !payload.baseUrl) {
+      throw new Error('Invalid media payload');
+    }
 
-    const safeDto = {
-      ...payload.dto,
-      tags: payload.dto.tags || [],
-      sharedWith: payload.dto.sharedWith || [],
-      title: payload.dto.title || '',
-      description: payload.dto.description || '',
-      albumId: payload.dto.albumId || ''
-    };
-
-    return this.mediaService.createMedias([safeDto], [payload.file]);
+    return this.mediaService.createMedias(
+      payload.dtos,
+      payload.files,
+      payload.baseUrl,
+    );
   }
 
   @MessagePattern('get_media')
   getMedia(@Payload() albumId?: string) {
-    return this.mediaService.getMedia(albumId || null);
+    // albumId will be '' for "all", or a real id for filtered
+    const normalized =
+      albumId && albumId.trim().length > 0 ? albumId : undefined;
+
+    return this.mediaService.getMedia(normalized);
   }
 
   @MessagePattern('get_media_by_id')

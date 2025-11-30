@@ -2,9 +2,12 @@ import { NestFactory } from '@nestjs/core';
 import { ApiGatewayModule } from './api-gateway.module';
 import * as cookieParser from 'cookie-parser';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { join } from 'path';
+import { NestExpressApplication } from '@nestjs/platform-express'; // 👈 important
 
 async function bootstrap() {
-  const app = await NestFactory.create(ApiGatewayModule);
+  // 👇 tell Nest we are using the Express platform
+  const app = await NestFactory.create<NestExpressApplication>(ApiGatewayModule);
 
   // Middleware
   app.use(cookieParser());
@@ -12,6 +15,11 @@ async function bootstrap() {
   app.enableCors({
     origin: 'http://localhost:5173', // frontend URL
     credentials: true,
+  });
+
+  // 👇 expose the /uploads folder where Multer stores files
+  app.useStaticAssets(join(process.cwd(), 'uploads'), {
+    prefix: '/uploads', // → http://localhost:8080/uploads/<filename>
   });
 
   // Swagger configuration
@@ -31,8 +39,8 @@ async function bootstrap() {
   // ---- Pretty console output (ESM-safe) ----
   try {
     const [{ default: chalk }, { default: boxen }] = await Promise.all([
-      import('chalk'), // ESM
-      import('boxen'), // ESM
+      import('chalk'),
+      import('boxen'),
     ]);
 
     const message = `
@@ -43,7 +51,6 @@ ${chalk.greenBright('📖 Swagger docs:')} ${chalk.cyan(`http://localhost:${port
 ${chalk.magentaBright('✨ Enjoy while building an amazing childcare app! ✨')}
 `;
 
-    // eslint-disable-next-line no-console
     console.log(
       boxen(message, {
         padding: 1,
@@ -52,9 +59,7 @@ ${chalk.magentaBright('✨ Enjoy while building an amazing childcare app! ✨')}
         borderStyle: 'round',
       }),
     );
-  } catch (e) {
-    // Fallback if chalk/boxen aren’t available or fail to import
-    // eslint-disable-next-line no-console
+  } catch {
     console.log(
       [
         '🚀 SalamNest API Gateway',

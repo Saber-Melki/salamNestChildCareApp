@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Album } from '../entities/album.entity';
@@ -15,21 +19,23 @@ export class MediaService {
     private readonly mediaRepo: Repository<Media>,
   ) {}
 
-  // -------------------- Albums --------------------
+  // ---------- ALBUMS ----------
+
   async createAlbum(dto: AlbumDto): Promise<Album> {
     if (!dto?.name) throw new BadRequestException('Album name is required');
 
     const album = this.albumRepo.create({
-      ...dto,
-      // itemCount: 0,
-      // createdDate: new Date().toISOString(),
+      name: dto.name,
+      description: dto.description ?? '',
+      isPublic: dto.isPublic ?? true,
+      itemCount: 0,
     });
 
-    return await this.albumRepo.save(album);
+    return this.albumRepo.save(album);
   }
 
   async getAlbums(): Promise<Album[]> {
-    return this.albumRepo.find();
+    return this.albumRepo.find({ order: { createdAt: 'DESC' } });
   }
 
   async getAlbum(id: string): Promise<Album> {
@@ -39,69 +45,110 @@ export class MediaService {
   }
 
   async updateAlbum(id: string, update: Partial<AlbumDto>): Promise<Album> {
-    const album = await this.getAlbum(id);
-    Object.assign(album, update);
-    return this.albumRepo.save(album);
+  if (!id) {
+    throw new BadRequestException('Album ID is required');
   }
+
+  try {
+    const result = await this.albumRepo.update(id, {
+      ...(update.name !== undefined ? { name: update.name } : {}),
+      ...(update.description !== undefined ? { description: update.description } : {}),
+      ...(update.isPublic !== undefined ? { isPublic: update.isPublic } : {}),
+    });
+
+    if (result.affected === 0) {
+      throw new NotFoundException('Album not found');
+    }
+
+    return this.getAlbum(id);
+  } catch (error) {
+    console.error('[MediaService] Error updating album', { id, update, error });
+    throw error;
+  }
+}
+
 
   async deleteAlbum(id: string): Promise<{ success: boolean }> {
     const album = await this.getAlbum(id);
 
     const mediaCount = await this.mediaRepo.count({ where: { albumId: id } });
-    if (mediaCount > 0) throw new BadRequestException('Cannot delete album with media items');
+    if (mediaCount > 0) {
+      throw new BadRequestException('Cannot delete album with media items');
+    }
 
     await this.albumRepo.remove(album);
     return { success: true };
   }
 
-  // -------------------- Media --------------------
+  // ---------- MEDIA ----------
+
+  /**
+   * Create media items inside an album.
+   * We expect:
+   * - albumId in dto
+   * - file(s) already saved by the API gateway (Multer)
+   * - we only receive filename + mimetype etc. here
+   */
   async createMedias(
     dtos: CreateMediaDto[],
-    files?: Express.Multer.File[],
+    files: Express.Multer.File[],
+    baseUrl: string, // e.g. http://localhost:8080
   ): Promise<Media[]> {
     if (!files || files.length === 0) {
       throw new BadRequestException('No files uploaded');
     }
 
-    const savedMedias: Media[] = [];
+    const results: Media[] = [];
 
     for (let i = 0; i < files.length; i++) {
       const dto = dtos[i];
       const file = files[i];
 
-      if (!dto.albumId) {
+      if (!dto?.albumId) {
         throw new BadRequestException('albumId is required');
       }
+
       const album = await this.getAlbum(dto.albumId);
       if (!album) throw new NotFoundException('Album not found');
 
-      const fileUrl = `http://localhost:8080/uploads/${file.filename}`;
+      // infer type from mimetype
+      const type = file.mimetype.startsWith('video/')
+        ? MediaType.VIDEO
+        : MediaType.IMAGE;
+
+      // Where the gateway serves static files. We store a full URL or relative path.
+      const url = `${baseUrl}/uploads/${file.filename}`;
 
       const media = this.mediaRepo.create({
-        ...dto,
-        url: fileUrl,
-        type: file.mimetype.startsWith('video/')
-          ? MediaType.Video
-          : MediaType.Image,
-        uploadDate: new Date().toISOString(),
+        albumId: dto.albumId,
+        url,
+        type,
+        title: dto.title ?? file.originalname,
+        description: dto.description ?? '',
+        tags: dto.tags ?? [],
+        sharedWith: dto.sharedWith ?? [],
       });
 
       const saved = await this.mediaRepo.save(media);
 
-      album.itemCount++;
+      // increment album counter
+      album.itemCount = (album.itemCount ?? 0) + 1;
       await this.albumRepo.save(album);
 
-      savedMedias.push(saved);
+      results.push(saved);
     }
 
-    return savedMedias;
+    return results;
   }
 
   async getMedia(albumId?: string): Promise<Media[]> {
     if (albumId) {
-      return this.mediaRepo.find({ where: { albumId } });
+      return this.mediaRepo.find({
+        where: { albumId },
+        order: { uploadDate: 'DESC' },
+      });
     }
-    return this.mediaRepo.find();
+    return this.mediaRepo.find({ order: { uploadDate: 'DESC' } });
   }
 
   async getMediaById(id: string): Promise<Media> {
@@ -114,8 +161,8 @@ export class MediaService {
     const media = await this.getMediaById(id);
 
     const album = await this.getAlbum(media.albumId);
-    if (album && album.itemCount > 0) {
-      album.itemCount--;
+    if (album && (album.itemCount ?? 0) > 0) {
+      album.itemCount = album.itemCount - 1;
       await this.albumRepo.save(album);
     }
 

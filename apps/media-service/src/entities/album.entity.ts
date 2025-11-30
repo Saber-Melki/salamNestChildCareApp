@@ -1,4 +1,11 @@
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  OneToMany,
+  CreateDateColumn,
+} from 'typeorm';
+import { Media } from './media.entity';
 
 @Entity()
 export class Album {
@@ -8,10 +15,18 @@ export class Album {
   @Column()
   name: string;
 
-  @Column()
-  description: string;
+  @Column({ nullable: true })
+  description?: string;
 
-  @Column()
+  @Column({ default: true })
   isPublic: boolean;
+
+  @Column({ default: 0 })
   itemCount: number;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @OneToMany(() => Media, (media) => media.album)
+  media: Media[];
 }

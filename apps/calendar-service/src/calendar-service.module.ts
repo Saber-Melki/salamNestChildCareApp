@@ -1,3 +1,4 @@
+// apps/calendar-service/src/calendar-service.module.ts
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
